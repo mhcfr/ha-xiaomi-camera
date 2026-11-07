@@ -171,7 +171,6 @@ RUN apt-get update \
         libstdc++6 \
         ca-certificates \
         curl \
-        ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # go2rtc reads the bridge's MPEG-TS stream natively and turns it into RTSP,
@@ -196,7 +195,7 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /opt/venv /opt/venv
-#COPY --from=ffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
+COPY --from=ffmpeg /usr/local/bin/ffmpeg /usr/local/bin/ffmpeg
 COPY rootfs /
 # The web UI built in the `web` stage above replaces the (empty) committed
 # `app/web` -- the bridge serves these files.
