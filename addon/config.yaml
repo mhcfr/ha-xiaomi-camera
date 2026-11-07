@@ -56,4 +56,4 @@ schema:
 # Prebuilt images are published for each supported architecture, so a normal
 # install pulls one rather than building locally. Supervisor substitutes
 # {arch} at install time.
-image: ghcr.io/willjayyyy/{arch}-addon-xiaomi-camera-bridge
+# image: ghcr.io/willjayyyy/{arch}-addon-xiaomi-camera-bridge
