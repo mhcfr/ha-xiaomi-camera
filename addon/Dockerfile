@@ -68,57 +68,7 @@ RUN find "${VIRTUAL_ENV}" -name "__pycache__" -type d -prune -exec rm -rf {} + \
 # ---------------------------------------------------------------------------
 # Stage 2: fetch a static ffmpeg
 # ---------------------------------------------------------------------------
-FROM ${BUILD_FROM} AS ffmpeg
 
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-ARG TARGETARCH
-ARG FFMPEG_TAG="autobuild-2026-08-03-14-02"
-ARG FFMPEG_BUILD="ffmpeg-n7.1.5-12-g1fdbca85aa"
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl xz-utils ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-# Debian's ffmpeg package pulls in over a hundred shared libraries -- font
-# rendering, SVG, ICU -- none of which matter for repackaging a stream. A static
-# build is one file and drops roughly 400 MB from the running image.
-#
-# The GPL variant is deliberate: this add-on encodes as well as copies -- the
-# compatibility and low-bandwidth streams are produced here -- and libx264 and
-# libx265 are the standard encoders for those formats. Both are excluded from
-# LGPL builds. ffmpeg runs as a separate process invoked over a command line,
-# so its licence does not reach this project's own Apache-2.0 code; the
-# obligation it does carry, to point at the build's sources, is met in README.
-COPY ffmpeg.sha256 /tmp/ffmpeg.sha256
-RUN set -eux; \
-    case "${TARGETARCH:-amd64}" in \
-        amd64) FF_ARCH="linux64" ;; \
-        arm64) FF_ARCH="linuxarm64" ;; \
-        *) echo "unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
-    esac; \
-    ARCHIVE="${FFMPEG_BUILD}-${FF_ARCH}-gpl-7.1.tar.xz"; \
-    curl -fsSL -o "/tmp/${ARCHIVE}" \
-        "https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_TAG}/${ARCHIVE}"; \
-    # Verified against a checksum committed to this repository: pinning the URL
-    # alone still trusts whatever it serves at build time.
-    grep " ${ARCHIVE}\$" /tmp/ffmpeg.sha256 | sed "s| ${ARCHIVE}\$|  /tmp/${ARCHIVE}|" | sha256sum -c -; \
-    tar -xJf "/tmp/${ARCHIVE}" -C /tmp; \
-    install -m 0755 "/tmp/${FFMPEG_BUILD}-${FF_ARCH}-gpl-7.1/bin/ffmpeg" /usr/local/bin/ffmpeg; \
-    rm -rf /tmp/*; \
-    /usr/local/bin/ffmpeg -version | head -1; \
-    # The published streams are encoded with x264 and x265, which exist only in
-    # GPL builds. Checked here so a build that lost them fails now rather than
-    # when a user opens a camera that will not play.
-    #
-    # Written out before it is searched, rather than piped into `grep -q`.
-    # With `pipefail` set, grep exiting on its first match closes the pipe,
-    # ffmpeg dies of SIGPIPE, and the build fails with 141 -- precisely when
-    # the encoder *is* there.
-    /usr/local/bin/ffmpeg -hide_banner -encoders > /tmp/encoders.txt 2>/dev/null; \
-    grep -q libx264 /tmp/encoders.txt; \
-    grep -q libx265 /tmp/encoders.txt; \
-    rm -f /tmp/encoders.txt
 
 # ---------------------------------------------------------------------------
 # Stage 3: build the add-on's web UI
