@@ -39,7 +39,7 @@ ALL_INTERFACES: Final = "0.0.0.0"
 
 # Xiaomi cloud region. Only "cn" has been verified; other regions use the same
 # code path with a region-prefixed host.
-DEFAULT_CLOUD_SERVER: Final = "cn"
+DEFAULT_CLOUD_SERVER: Final = "de"
 
 # Registered with Xiaomi's OAuth2 service by the upstream SDK. Changing it
 # requires registering an application of your own with Xiaomi.
